@@ -13,14 +13,6 @@ type VisitCounter interface {
 }
 
 func SaveVisits(filename string, v VisitCounter) error {
-	if f, err := os.Create(filename); err == nil {
-		f.Close()
-	}
-
-	if err := os.Truncate(filename, 0); err != nil {
-		return err
-	}
-
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err

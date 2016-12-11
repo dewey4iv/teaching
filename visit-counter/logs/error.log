@@ -1,0 +1,2 @@
+[ ERROR ] 	2016/12/11 00:52:04 logger.go:43: Error w/ HTTP Server
+[ ERROR ] 	2016/12/11 00:52:04 logger.go:43: listen tcp :80: bind: permission denied

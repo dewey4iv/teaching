@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
@@ -22,7 +21,7 @@ func main() {
 	counterService := &CounterService{0, l}
 
 	l.Info("Attempting to set Visits")
-	if err := ReadVisits(visitFile, counterService); err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+	if err := ReadVisits(visitFile, counterService); err != nil && os.IsNotExist(err) {
 		panic(err)
 	}
 
@@ -31,15 +30,22 @@ func main() {
 	loggerMiddleware := NewMddlLogger(l)
 	mux.Handle("/visit", loggerMiddleware(counterService))
 
-	go func(mux *http.ServeMux) {
+	httpChan := make(chan error)
+
+	go func(httpChan chan error, mux *http.ServeMux, l *Logger) {
+		l.Info("Starting HTTP Server")
 		if err := http.ListenAndServe(":8080", mux); err != nil {
-			panic(err)
+			httpChan <- err
 		}
-	}(mux)
+	}(httpChan, mux, l)
 
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	select {
+	case err := <-httpChan:
+		l.Err("Error w/ HTTP Server")
+		l.Err(err)
 	case _ = <-sigCh:
 		l.Info("Received Shutdown Signal")
 		l.Info("Writing Visits to Disk")
