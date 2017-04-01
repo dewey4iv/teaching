@@ -62,7 +62,8 @@ func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := conn.ReadJSON(&txt); err != nil {
-			log.Printf("attempting to read from conn")
+			log.Printf("error reading from connenction:\n %s", err.Error())
+			s.cleanupConn(conn)
 			return
 		}
 
@@ -83,14 +84,22 @@ func (s *ChatServer) setup(w http.ResponseWriter, r *http.Request, conn *websock
 	welcome := NewPayload("welcome", "Chat Bot", "")
 
 	if err := conn.WriteJSON(welcome); err != nil {
+		s.cleanupConn(conn)
 		return err
 	}
 
 	if err := s.room.Broadcast(conn, fmt.Sprintf("%s has joined the room!", username)); err != nil {
+		s.cleanupConn(conn)
 		return err
 	}
 
 	return nil
+}
+
+func (s *ChatServer) cleanupConn(conn *websocket.Conn) {
+	log.Printf("closing connection")
+	conn.Close()
+	s.room.Remove(conn)
 }
 
 func handleErr(w http.ResponseWriter, err error, status int) {
