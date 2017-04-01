@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// NewServerMsg returns a payload
 func NewServerMsg(t string, message string) Payload {
 	return Payload{
 		Type:      t,
@@ -14,6 +15,7 @@ func NewServerMsg(t string, message string) Payload {
 	}
 }
 
+// NewUserMsg returns a payload
 func NewUserMsg(username string, message string) Payload {
 	return Payload{
 		Type:      "chat-message",
@@ -23,6 +25,7 @@ func NewUserMsg(username string, message string) Payload {
 	}
 }
 
+// NewPayload returns a raw payload
 func NewPayload(t string, from string, message string) Payload {
 	return Payload{
 		Type:      t,
@@ -32,6 +35,7 @@ func NewPayload(t string, from string, message string) Payload {
 	}
 }
 
+// Payload defines the basic message passed to and from the client
 type Payload struct {
 	Type      string      `json:"type"`
 	From      string      `json:"from"`
@@ -39,6 +43,7 @@ type Payload struct {
 	CreatedAt time.Time   `json:"created_at"`
 }
 
+// MarshalJSON implments json.Marshaller
 func (p Payload) MarshalJSON() ([]byte, error) {
 	// Mon Jan 2 15:04:05 MST 2006
 	createdAt := p.CreatedAt.Format(time.Kitchen)
