@@ -5,6 +5,24 @@ import (
 	"time"
 )
 
+func NewServerMsg(t string, message string) Payload {
+	return Payload{
+		Type:      t,
+		From:      "Chat Bot",
+		Message:   message,
+		CreatedAt: time.Now(),
+	}
+}
+
+func NewUserMsg(username string, message string) Payload {
+	return Payload{
+		Type:      "chat-message",
+		From:      username,
+		Message:   message,
+		CreatedAt: time.Now(),
+	}
+}
+
 func NewPayload(t string, from string, message string) Payload {
 	return Payload{
 		Type:      t,
