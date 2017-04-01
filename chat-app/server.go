@@ -1,13 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -91,95 +89,4 @@ func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		s.room.Broadcast(conn, txt.Message)
 	}
-}
-
-// Room holds all of the connections
-type Room struct {
-	mux     sync.Mutex
-	clients map[*websocket.Conn]string // string is the username
-}
-
-func NewPayload(t string, from string, message string) Payload {
-	return Payload{
-		Type:      t,
-		From:      from,
-		Message:   message,
-		CreatedAt: time.Now(),
-	}
-}
-
-type Payload struct {
-	Type      string      `json:"type"`
-	From      string      `json:"from"`
-	Message   interface{} `json:"message"`
-	CreatedAt time.Time   `json:"created_at"`
-}
-
-func (p Payload) MarshalJSON() ([]byte, error) {
-	// Mon Jan 2 15:04:05 MST 2006
-	createdAt := p.CreatedAt.Format(time.Kitchen)
-
-	var msg = struct {
-		Type      string      `json:"type"`
-		From      string      `json:"from"`
-		Message   interface{} `json:"message"`
-		CreatedAt string      `json:"created_at"`
-	}{p.Type, p.From, p.Message, createdAt}
-
-	return json.Marshal(msg)
-}
-
-// Broadcast takes a message and sends it to all in the room
-func (r *Room) Broadcast(conn *websocket.Conn, msg string) error {
-	username := r.clients[conn]
-
-	log.Printf("Got message from %s \n Message: \n\t %s", username, msg)
-
-	message := NewPayload("chat-message", username, msg)
-
-	for conn, _ := range r.clients {
-		if err := conn.WriteJSON(message); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Add takes a username and connection and adds it to the list of clients
-func (r *Room) Add(conn *websocket.Conn, username string) error {
-	r.mux.Lock()
-	defer r.mux.Unlock()
-
-	r.clients[conn] = username
-
-	return nil
-}
-
-// Remove removes the connection from the room
-func (r *Room) Remove(conn *websocket.Conn) error {
-	r.mux.Lock()
-	defer r.mux.Unlock()
-
-	delete(r.clients, conn)
-
-	return nil
-}
-
-// Option is anything that has an Apply(*ChatServer) error
-type Option interface {
-	Apply(*ChatServer) error
-}
-
-// WithUpgrader takes an upgrader and sets it on the ChatServer
-func WithUpgrader(upgrader websocket.Upgrader) Option {
-	return &withUpgrader{upgrader}
-}
-
-type withUpgrader struct {
-	upgrader websocket.Upgrader
-}
-
-func (opt *withUpgrader) Apply(c *ChatServer) error {
-	return nil
 }
