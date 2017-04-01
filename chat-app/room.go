@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
@@ -39,6 +40,11 @@ func (r *Room) Broadcast(conn *websocket.Conn, msg string) error {
 func (r *Room) Add(conn *websocket.Conn, username string) error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
+
+	// check that username doesn't already exist
+	if _, exists := r.usernamesMap[username]; exists {
+		return fmt.Errorf(`username "%s" already taken`, username)
+	}
 
 	r.connections = append(r.connections, conn)
 	r.connectionsMap[conn] = len(r.connections)

@@ -57,6 +57,7 @@ func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for {
+		// TODO: maybe this should be a payload??
 		var txt struct {
 			Message string `json:"message"`
 		}
