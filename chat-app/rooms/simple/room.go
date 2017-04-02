@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// NewRoom returns a new instance of a Room
+// New returns a new instance of a Room
 func New() (*Room, error) {
 	return &Room{
 		mux:            sync.Mutex{},

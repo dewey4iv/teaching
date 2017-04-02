@@ -19,3 +19,18 @@ type withUpgrader struct {
 func (opt *withUpgrader) Apply(c *ChatServer) error {
 	return nil
 }
+
+// WithRoom sets the room on the ChatServer
+func WithRoom(room Room) Option {
+	return &withRoom{room}
+}
+
+type withRoom struct {
+	room Room
+}
+
+func (opt *withRoom) Apply(c *ChatServer) error {
+	c.room = opt.room
+
+	return nil
+}

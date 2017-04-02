@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	room "github.com/dewey4iv/teaching/chat-app/rooms/simple"
 	"github.com/gorilla/websocket"
 )
 
@@ -16,10 +17,18 @@ func main() {
 		http.FileServer(http.Dir("./public/")).ServeHTTP(w, r)
 	})
 
-	chatServer, err := New(WithUpgrader(websocket.Upgrader{
-		ReadBufferSize:  512,
-		WriteBufferSize: 512,
-	}))
+	simpleRoom, err := room.New()
+	if err != nil {
+		panic(err)
+	}
+
+	chatServer, err := New(
+		WithUpgrader(websocket.Upgrader{
+			ReadBufferSize:  512,
+			WriteBufferSize: 512,
+		}),
+		WithRoom(simpleRoom),
+	)
 
 	if err != nil {
 		panic(err)
