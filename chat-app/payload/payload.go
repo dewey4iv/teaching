@@ -1,4 +1,4 @@
-package main
+package payload
 
 import (
 	"encoding/json"
@@ -25,8 +25,8 @@ func NewUserMsg(username string, message string) Payload {
 	}
 }
 
-// NewPayload returns a raw payload
-func NewPayload(t string, from string, message string) Payload {
+// New returns a raw payload
+func New(t string, from string, message string) Payload {
 	return Payload{
 		Type:      t,
 		From:      from,

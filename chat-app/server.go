@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/dewey4iv/teaching/chat-app/payload"
+	room "github.com/dewey4iv/teaching/chat-app/rooms/simple"
 	"github.com/gorilla/websocket"
 )
 
@@ -27,7 +29,7 @@ func New(opts ...Option) (*ChatServer, error) {
 	}
 
 	if c.room == nil {
-		room, err := NewRoom()
+		room, err := room.New()
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +43,7 @@ func New(opts ...Option) (*ChatServer, error) {
 // ChatServer is the Chat ChatServer
 type ChatServer struct {
 	upgrader websocket.Upgrader
-	room     *Room
+	room     Room
 }
 
 func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +56,7 @@ func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.setup(w, r, conn); err != nil {
-		conn.WriteJSON(NewServerMsg("close-message", err.Error()))
+		conn.WriteJSON(payload.NewServerMsg("close-message", err.Error()))
 		return
 	}
 
@@ -81,13 +83,13 @@ func (s *ChatServer) setup(w http.ResponseWriter, r *http.Request, conn *websock
 	}
 
 	if err := s.room.Add(conn, username); err != nil {
-		payload := NewServerMsg("close-message", err.Error())
+		payload := payload.NewServerMsg("close-message", err.Error())
 		conn.WriteJSON(payload)
 		s.cleanupConn(conn)
 		return err
 	}
 
-	welcome := NewPayload("welcome", "Chat Bot", "")
+	welcome := payload.New("welcome", "Chat Bot", "")
 
 	if err := conn.WriteJSON(welcome); err != nil {
 		s.cleanupConn(conn)
@@ -100,6 +102,12 @@ func (s *ChatServer) setup(w http.ResponseWriter, r *http.Request, conn *websock
 	}
 
 	return nil
+}
+
+type Room interface {
+	Broadcast(conn *websocket.Conn, msg string) error
+	Add(conn *websocket.Conn, username string) error
+	Remove(conn *websocket.Conn) error
 }
 
 func (s *ChatServer) cleanupConn(conn *websocket.Conn) {

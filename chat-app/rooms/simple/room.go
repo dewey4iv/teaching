@@ -1,15 +1,16 @@
-package main
+package room
 
 import (
 	"fmt"
 	"log"
 	"sync"
 
+	"github.com/dewey4iv/teaching/chat-app/payload"
 	"github.com/gorilla/websocket"
 )
 
 // NewRoom returns a new instance of a Room
-func NewRoom() (*Room, error) {
+func New() (*Room, error) {
 	return &Room{
 		mux:            sync.Mutex{},
 		connectionsMap: make(map[*websocket.Conn]int),
@@ -36,7 +37,7 @@ func (r *Room) Broadcast(conn *websocket.Conn, msg string) error {
 
 	log.Printf("Got message from %s \n Message: \n\t %s", username, msg)
 
-	message := NewUserMsg(username, msg)
+	message := payload.NewUserMsg(username, msg)
 
 	for _, conn := range r.connections {
 		if err := conn.WriteJSON(message); err != nil {
