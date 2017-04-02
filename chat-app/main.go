@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	room "github.com/dewey4iv/teaching/chat-app/rooms/simple"
+	room "github.com/dewey4iv/teaching/chat-app/rooms/language"
 	"github.com/gorilla/websocket"
 )
 
@@ -17,7 +17,11 @@ func main() {
 		http.FileServer(http.Dir("./public/")).ServeHTTP(w, r)
 	})
 
-	simpleRoom, err := room.New()
+	theRoom, err := room.New(
+		room.WithFilterWords([]string{
+			"George",
+		}),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,7 @@ func main() {
 			ReadBufferSize:  512,
 			WriteBufferSize: 512,
 		}),
-		WithRoom(simpleRoom),
+		WithRoom(theRoom),
 	)
 
 	if err != nil {
