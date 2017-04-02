@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -28,10 +27,12 @@ func New(opts ...Option) (*ChatServer, error) {
 	}
 
 	if c.room == nil {
-		c.room = &Room{
-			mux:     sync.Mutex{},
-			clients: make(map[*websocket.Conn]string),
+		room, err := NewRoom()
+		if err != nil {
+			return nil, err
 		}
+
+		c.room = room
 	}
 
 	return &c, nil
@@ -44,6 +45,7 @@ type ChatServer struct {
 }
 
 func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// ensure unique username
 
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -52,7 +54,7 @@ func (s *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.setup(w, r, conn); err != nil {
-		handleErr(w, err, http.StatusNotFound)
+		conn.WriteJSON(NewServerMsg("close-message", err.Error()))
 		return
 	}
 
@@ -79,6 +81,9 @@ func (s *ChatServer) setup(w http.ResponseWriter, r *http.Request, conn *websock
 	}
 
 	if err := s.room.Add(conn, username); err != nil {
+		payload := NewServerMsg("close-message", err.Error())
+		conn.WriteJSON(payload)
+		s.cleanupConn(conn)
 		return err
 	}
 

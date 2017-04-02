@@ -29,6 +29,8 @@ var Conn = {
 					console.log("got control-message:");
 					console.log(data.message);
 					break;
+				case "close-message":
+					alert("connection closed: "+data.message);
 				default:
 					console.log("message doesn't fit the types we have:");
 					console.log(event.data);

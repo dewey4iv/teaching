@@ -8,11 +8,18 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// NewRoom returns a new instance of a Room
+func NewRoom() (*Room, error) {
+	return &Room{
+		mux:            sync.Mutex{},
+		connectionsMap: make(map[*websocket.Conn]int),
+		usernamesMap:   make(map[string]int),
+	}, nil
+}
+
 // Room holds all of the connections
 type Room struct {
-	mux     sync.Mutex
-	clients map[*websocket.Conn]string // string is the username
-
+	mux            sync.Mutex
 	connections    []*websocket.Conn
 	connectionsMap map[*websocket.Conn]int
 	usernames      []string
@@ -21,13 +28,17 @@ type Room struct {
 
 // Broadcast takes a message and sends it to all in the room
 func (r *Room) Broadcast(conn *websocket.Conn, msg string) error {
-	username := r.clients[conn]
+	r.mux.Lock()
+	defer r.mux.Unlock()
+
+	pos := r.connectionsMap[conn]
+	username := r.usernames[pos]
 
 	log.Printf("Got message from %s \n Message: \n\t %s", username, msg)
 
 	message := NewUserMsg(username, msg)
 
-	for conn, _ := range r.clients {
+	for _, conn := range r.connections {
 		if err := conn.WriteJSON(message); err != nil {
 			return err
 		}
@@ -47,9 +58,9 @@ func (r *Room) Add(conn *websocket.Conn, username string) error {
 	}
 
 	r.connections = append(r.connections, conn)
-	r.connectionsMap[conn] = len(r.connections)
+	r.connectionsMap[conn] = len(r.connections) - 1
 	r.usernames = append(r.usernames, username)
-	r.usernamesMap[username] = len(r.usernames)
+	r.usernamesMap[username] = len(r.usernames) - 1
 
 	return nil
 }
@@ -59,7 +70,11 @@ func (r *Room) Remove(conn *websocket.Conn) error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	pos := r.connectionsMap[conn]
+	pos, exists := r.connectionsMap[conn]
+	if !exists {
+		return nil
+	}
+
 	r.connections = append(r.connections[:pos], r.connections[pos+1:]...)
 	delete(r.connectionsMap, conn)
 	username := r.usernames[pos]
